@@ -1,38 +1,50 @@
-import React, { useState } from 'react'
+import React, { useReducer } from 'react'
 import { Board } from './Board'
+import { tutorialGameReducer } from './reducer'
 
 export const Game = () => {
-  const [stepNumber, setStepNumber] = useState(0)
-  const [xIsNext, setXIsNext] = useState(true)
-  const [history, setHistory] = useState([
-    {
-      squares: Array(9).fill(null),
-    },
-  ])
+  const initialState = {
+    stepNumber: 0,
+    xIsNext: true,
+    history: [{ squares: Array(9).fill(null) }],
+  }
+
+  const [state, dispatch] = useReducer(tutorialGameReducer, initialState)
 
   const handleClick = (i) => {
-    const targetHistory = history.slice(0, stepNumber + 1)
+    const targetHistory = state.history.slice(0, state.stepNumber + 1)
     const current = targetHistory[targetHistory.length - 1]
     const squares = current.squares.slice()
-    if (calculateWinner(squares) || squares[i]) {
-      return
-    }
-    squares[i] = xIsNext ? 'X' : 'O'
+    if (calculateWinner(squares) || squares[i]) return
+    squares[i] = state.xIsNext ? 'X' : 'O'
 
-    setStepNumber(targetHistory.length)
-    setXIsNext(!xIsNext)
-    setHistory(
-      targetHistory.concat([
+    dispatch({
+      type: 'SET_STEP_NUMBER',
+      step: targetHistory.length,
+    })
+    dispatch({
+      type: 'SET_X_IS_NEXT',
+      flag: !state.xIsNext,
+    })
+    dispatch({
+      type: 'SET_HISTORY',
+      history: targetHistory.concat([
         {
           squares: squares,
         },
-      ])
-    )
+      ]),
+    })
   }
 
   const jumpTo = (step) => {
-    setStepNumber(step)
-    setXIsNext(step % 2 === 0)
+    dispatch({
+      type: 'SET_STEP_NUMBER',
+      step: step,
+    })
+    dispatch({
+      type: 'SET_X_IS_NEXT',
+      flag: step % 2 === 0,
+    })
   }
 
   const calculateWinner = (squares) => {
@@ -60,7 +72,7 @@ export const Game = () => {
   }
 
   const moves = () => {
-    return history.map((_, move) => {
+    return state.history.map((_, move) => {
       const desc = move ? 'Go to move #' + move : 'Go to game start'
       return (
         <li key={move}>
@@ -71,12 +83,12 @@ export const Game = () => {
   }
 
   const status = () => {
-    const winner = calculateWinner(history[stepNumber].squares)
+    const winner = calculateWinner(state.history[state.stepNumber].squares)
 
     if (winner) {
       return 'Winner: ' + winner
     } else {
-      return 'Next player: ' + (xIsNext ? 'X' : 'O')
+      return 'Next player: ' + (state.xIsNext ? 'X' : 'O')
     }
   }
 
@@ -84,7 +96,7 @@ export const Game = () => {
     <div className='game'>
       <div className='game-board'>
         <Board
-          squares={history[stepNumber].squares}
+          squares={state.history[state.stepNumber].squares}
           onClick={(i) => handleClick(i)}
         />
       </div>
